@@ -66,9 +66,9 @@ cap_vector = tf.keras.preprocessing.sequence.pad_sequences(train_seqs, padding='
 # Calculates the max_length, which is used to store the attention weights
 max_length = calc_max_length(train_seqs)
 
-##############################################
-#> Split the data into training and testing <#
-##############################################
+###########################
+#> Prepare training data <#
+###########################
 img_to_cap_vector = collections.defaultdict(list)
 for img, cap in zip(img_name_vector, cap_vector):
     img_to_cap_vector[img].append(cap)
@@ -78,22 +78,12 @@ img_keys = list(img_to_cap_vector.keys())
 random.seed(42)
 random.shuffle(img_keys)
 
-slice_index = int(len(img_keys)*0.8)
-img_name_train_keys, img_name_val_keys = img_keys[:slice_index], img_keys[slice_index:]
-
 img_name_train = []
 cap_train = []
-for imgt in img_name_train_keys:
-    capt_len = len(img_to_cap_vector[imgt])
-    img_name_train.extend([imgt] * capt_len)
-    cap_train.extend(img_to_cap_vector[imgt])
-
-img_name_val = []
-cap_val = []
-for imgv in img_name_val_keys:
-    capv_len = len(img_to_cap_vector[imgv])
-    img_name_val.extend([imgv] * capv_len)
-    cap_val.extend(img_to_cap_vector[imgv])
+for img_key in img_keys:
+    capt_len = len(img_to_cap_vector[img_key])
+    img_name_train.extend([img_key] * capt_len)
+    cap_train.extend(img_to_cap_vector[img_key])
 
 #########################################
 #> Create tf.data dataset for training <#
@@ -199,20 +189,22 @@ def train_step(img_tensor, target):
 
 EPOCHS = 20
 
-for epoch in tqdm(range(start_epoch, EPOCHS), position=0, leave=True):
-    start = time.time()
-    total_loss = 0
+with open('log.txt', 'a') as f:
+    f.write(f'Number of epochs {EPOCHS} Number of steps per epoch {num_steps}\n')
+    for epoch in range(start_epoch, EPOCHS):
+        start_epoch = time.time()
+        total_loss = 0
 
-    for (batch, (img_tensor, target)) in tqdm(enumerate(dataset), position=0, leave=True):
-        batch_loss, t_loss = train_step(img_tensor, target)
-        total_loss += t_loss
+        for (batch, (img_tensor, target)) in tqdm(enumerate(dataset), position=0, leave=True):
+            start_step = time.time()
+            batch_loss, t_loss = train_step(img_tensor, target)
+            total_loss += t_loss
 
-        if batch % BATCH_SIZE == 0:
             average_batch_loss = batch_loss.numpy()/int(target.shape[1])
-            print(f'Epoch {epoch+1} Batch {batch} Loss {average_batch_loss:.4f}')
+            f.write(f'Epoch {epoch+1} Batch {batch}/{num_steps} Loss {average_batch_loss:.4f} Time {time.time()-start_step:.2f} sec\n')
 
-    if epoch % 5 == 0:
-        ckpt_manager.save()
+        if epoch % 5 == 0:
+            ckpt_manager.save()
 
-    print(f'Epoch {epoch+1} Loss {total_loss/num_steps:.6f}')
-    print(f'Time taken for 1 epoch {time.time()-start:.2f} sec\n')
+        f.write(f'Epoch {epoch+1} Loss {total_loss/num_steps:.6f}\n')
+        f.write(f'Time taken for 1 epoch {time.time()-start_epoch:.2f} sec\n\n')
