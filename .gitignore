@@ -3,3 +3,4 @@ __pycache__
 checkpoints
 annotations
 train2014
+*.zip
