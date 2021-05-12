@@ -3,25 +3,9 @@ import time
 import tensorflow as tf
 from tensorflow.keras import models
 
-from models import CNN_Encoder, RNN_Decoder
+from model import CNN_Encoder, RNN_Decoder, FeatureExtraction
 
 TOP_K = 5000
-
-def load_image_InceptionV3(image_path):
-    img = tf.io.read_file(image_path)
-    img = tf.image.decode_image(img, channels=3)
-    img = tf.image.resize(img, (299, 299))
-    img = tf.keras.applications.inception_v3.preprocess_input(img)
-    return img
-
-
-def build_features_extract_InceptionV3():
-    image_model = tf.keras.applications.InceptionV3(include_top=False,
-                                                weights='imagenet')
-    new_input = image_model.input
-    hidden_layer = image_model.layers[-1].output
-
-    return tf.keras.Model(new_input, hidden_layer)
 
 
 def prepare_caption(annotation_file):
@@ -71,7 +55,7 @@ def inference(image, models, random_seed=None):
     feature_extractor, tokenizer, max_length, encoder, decoder = models
 
     hidden = decoder.reset_state(batch_size=1)
-    img_batch = tf.expand_dims(load_image_InceptionV3(image), 0)
+    img_batch = tf.expand_dims(FeatureExtraction.load_image_InceptionV3(image), 0)
     img_batch = feature_extractor(img_batch)
     img_batch = tf.reshape(img_batch, (img_batch.shape[0], -1, img_batch.shape[3]))
 
@@ -105,7 +89,7 @@ if '__main__' == __name__:
     checkpoint_path='./checkpoints/train/'
 
     ts = time.time()
-    feature_extractor = build_features_extract_InceptionV3()
+    feature_extractor = FeatureExtraction.build_model_InceptionV3()
     tokenizer, max_length = load_tokenizer(annotation_file)
     encoder, decoder = load_latest_imgcap(checkpoint_path)
     te = time.time()

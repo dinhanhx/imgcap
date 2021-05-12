@@ -8,7 +8,7 @@ import json
 
 from PIL import Image
 from tqdm import tqdm
-from models import BahdanauAttention, CNN_Encoder, RNN_Decoder
+from model import BahdanauAttention, CNN_Encoder, RNN_Decoder
 
 ##########################
 #> Load MS-COCO dataset <#
