@@ -30,9 +30,9 @@ conda create -n imgcap python=3.6 tensorflow-gpu cudatoolkit=<version> cudnn=<ve
 
 This model is trained on a single [Tesla K80](https://www.nvidia.com/en-gb/data-center/tesla-k80/) 12 GiB about 10 hours.
 
-If you are lazy and believe in your internet, your conda environment, and your hardware, simply run this `python end_to_end.py`. It will download, prepare [MS-COCO-2014 dataset](http://images.cocodataset.org/zips/train2014.zip); then tokenize, extract feature; then train model and save it.
+**Step 1:** run this `python download_extract.py`. It will download, prepare [MS-COCO-2014 dataset](http://images.cocodataset.org/zips/train2014.zip); then tokenize, extract feature.
 
-If you have downloaded, prepared, tokenized, extract features, simple run this `python no_download.py`. It will train model and save it.
+**Step 2:** run this `python train.py`. It will train model and save it.
 
 ## Inference
 
@@ -40,7 +40,7 @@ Download pretrained_models.zip from this repos' release section. This file zip p
 - `annotations/captions_train2014.json` from [MS-COCO-2014 dataset](http://images.cocodataset.org/zips/train2014.zip)
 - my checkpoints folder ~ pretrained models
 
-Open file `inf.py` then scroll down to this block of code, then edit `image_file`, possibly `annotation_file` and `checkpoint_path`.
+Open file `inf.py` then scroll down to this block of code, then edit `image_file`, possibly `annotation_file` and `checkpoint_path`. Then run with `python inf.py`
 ```python
 if '__main__' == __name__:
     image_file = 'surf.jpg'
@@ -49,7 +49,7 @@ if '__main__' == __name__:
     checkpoint_path='./checkpoints/train/'
 
     ts = time.time()
-    feature_extractor = build_features_extract_InceptionV3()
+    feature_extractor = FeatureExtraction.build_model_InceptionV3()
     tokenizer, max_length = load_tokenizer(annotation_file)
     encoder, decoder = load_latest_imgcap(checkpoint_path)
     te = time.time()
@@ -71,16 +71,16 @@ if '__main__' == __name__:
 
 Expected output if you use my pre-trained model on same GPU that I used:
 ```
-a man riding a wave on a wave .
-Loading models takes 15.834337711334229 seconds
-Inference takes 1.6185123920440674 seconds
+a man riding a wave on a surfboard .
+Loading models takes 16.58525776863098 seconds
+Inference takes 1.5878496170043945 seconds
 ```
 
 Expected output if you use my pre-trained model on same CPU that I used:
 ```
-a man riding a wave on a wave .
-Loading models takes 15.286941289901733 seconds
-Inference takes 0.5417170524597168 seconds
+a man riding a wave on a surfboard .
+Loading models takes 15.252160787582397 seconds
+Inference takes 0.5092818737030029 seconds
 ```
 
 __CPU__ that I used:
