@@ -21,7 +21,9 @@ def load_latest_imgcap(checkpoint_path):
 
 
 def formatt_result(result: list):
-    result.remove('<end>')
+    if '<end>' in result:
+        result.remove('<end>')
+    
     result.append('.')
     return ' '.join(result)
 

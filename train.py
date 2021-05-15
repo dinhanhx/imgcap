@@ -146,9 +146,9 @@ ckpt = tf.train.Checkpoint(encoder=encoder,
                             optimizer=optimizer)
 ckpt_manager = tf.train.CheckpointManager(ckpt, checkpoint_path, max_to_keep=5)
 
-start_epoch = 0
+start_epoch = 1
 if ckpt_manager.latest_checkpoint:
-    start_epoch = int(ckpt_manager.latest_checkpoint.split('-')[-1])
+    start_epoch = int(ckpt_manager.latest_checkpoint.split('-')[-1]) * 5 + 1
     # restoring the latest checkpoint in checkpoint_path
     ckpt.restore(ckpt_manager.latest_checkpoint)
 
@@ -187,11 +187,14 @@ def train_step(img_tensor, target):
 
     return loss, total_loss
 
-EPOCHS = 20
+EPOCHS = 35
 
 with open('log.txt', 'a') as f:
-    f.write(f'Number of epochs {EPOCHS} Number of steps per epoch {num_steps}\n')
-    for epoch in range(start_epoch, EPOCHS):
+    start_info = f'Number of epochs {EPOCHS} Number of steps per epoch {num_steps}\n'
+    f.write(start_info)
+    print(start_info)
+
+    for epoch in range(start_epoch, EPOCHS+1):
         start_epoch = time.time()
         total_loss = 0
 
@@ -201,10 +204,18 @@ with open('log.txt', 'a') as f:
             total_loss += t_loss
 
             average_batch_loss = batch_loss.numpy()/int(target.shape[1])
-            f.write(f'Epoch {epoch+1} Batch {batch}/{num_steps} Loss {average_batch_loss:.4f} Time {time.time()-start_step:.2f} sec\n')
+
+            batch_info = f'Epoch {epoch} Batch {batch}/{num_steps} Loss {average_batch_loss:.4f} Time {time.time()-start_step:.2f} sec\n' 
+            f.write(batch_info)
+            print(batch_info)
 
         if epoch % 5 == 0:
             ckpt_manager.save()
+        
+        epoch_loss_info = f'Epoch {epoch} Loss {total_loss/num_steps:.6f}\n'
+        f.write(epoch_loss_info)
+        print(epoch_loss_info)
 
-        f.write(f'Epoch {epoch+1} Loss {total_loss/num_steps:.6f}\n')
-        f.write(f'Time taken for 1 epoch {time.time()-start_epoch:.2f} sec\n\n')
+        epoch_time_info = f'Time taken for 1 epoch {time.time()-start_epoch:.2f} sec\n\n'
+        f.write(epoch_time_info)
+        print(epoch_time_info)
