@@ -36,7 +36,7 @@ This model is trained on a single [Tesla K80](https://www.nvidia.com/en-gb/data-
 
 ## Inference
 
-Download pretrained_models.zip from this repos' release section. This file zip provides:
+Download pretrained_models.zip from this repos' **latest** release section. This file zip provides:
 - `annotations/captions_train2014.json` from [MS-COCO-2014 dataset](http://images.cocodataset.org/zips/train2014.zip)
 - my checkpoints folder ~ pretrained models
 
@@ -71,16 +71,16 @@ if '__main__' == __name__:
 
 Expected output if you use my pre-trained model on same GPU that I used:
 ```
-a man riding a wave on a surfboard .
-Loading models takes 16.58525776863098 seconds
-Inference takes 1.5878496170043945 seconds
+a man surfing a wave in the ocean .
+Loading models takes 15.922804355621338 seconds
+Inference takes 1.5287904739379883 seconds
 ```
 
 Expected output if you use my pre-trained model on same CPU that I used:
 ```
-a man riding a wave on a surfboard .
-Loading models takes 15.252160787582397 seconds
-Inference takes 0.5092818737030029 seconds
+a man surfing a wave in the ocean .
+Loading models takes 15.178019046783447 seconds
+Inference takes 0.5142796039581299 seconds
 ```
 
 __CPU__ that I used:
