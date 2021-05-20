@@ -1,121 +1,27 @@
 import tensorflow as tf
-import collections
-import random
-import numpy as np
-import os
 import time
-import json
 
-from PIL import Image
 from tqdm import tqdm
-from model import BahdanauAttention, CNN_Encoder, RNN_Decoder
+from model import CNN_Encoder, RNN_Decoder
+from dataset import e2e_create_tf_dataset
+from tokenization import TOP_K, load_tokenizer
 
-##########################
-#> Load MS-COCO dataset <#
-##########################
 annotation_file = 'annotations/captions_train2014.json'
-image_folder = '/train2014/'
-PATH = os.path.abspath('.') + image_folder
-
-with open(annotation_file, 'r') as f:
-    annotations = json.load(f)
-
-# Group all captions together having the same image ID.
-image_path_to_caption = collections.defaultdict(list)
-for val in annotations['annotations']:
-    caption = f"<start> {val['caption']} <end>"
-    image_path = PATH + 'COCO_train2014_' + '%012d.jpg' % (val['image_id'])
-    image_path_to_caption[image_path].append(caption)
-
-train_image_paths = list(image_path_to_caption.keys())
-random.seed(42)
-random.shuffle(train_image_paths)
-
-train_captions = []
-img_name_vector = []
-
-for image_path in train_image_paths:
-    caption_list = image_path_to_caption[image_path]
-    train_captions.extend(caption_list)
-    img_name_vector.extend([image_path] * len(caption_list))
-
-##########################################
-#> Preprocess and tokenize the captions <#
-##########################################
-# Find the maximum length of any caption in our dataset
-def calc_max_length(tensor):
-    return max(len(t) for t in tensor)
-
-# Choose the top 5000 words from the vocabulary
-top_k = 5000
-tokenizer = tf.keras.preprocessing.text.Tokenizer(num_words=top_k,
-                                                    oov_token="<unk>",
-                                                    filters='!"#$%&()*+.,-/:;=?@[\]^_`{|}~ ')
-tokenizer.fit_on_texts(train_captions)
-
-tokenizer.word_index['<pad>'] = 0
-tokenizer.index_word[0] = '<pad>'
-
-# Create the tokenized vectors
-train_seqs = tokenizer.texts_to_sequences(train_captions)
-
-# Pad each vector to the max_length of the captions
-# If you do not provide a max_length value, pad_sequences calculates it automatically
-cap_vector = tf.keras.preprocessing.sequence.pad_sequences(train_seqs, padding='post')
-
-# Calculates the max_length, which is used to store the attention weights
-max_length = calc_max_length(train_seqs)
-
-###########################
-#> Prepare training data <#
-###########################
-img_to_cap_vector = collections.defaultdict(list)
-for img, cap in zip(img_name_vector, cap_vector):
-    img_to_cap_vector[img].append(cap)
-
-# Create training and validation sets using an 80-20 split randomly.
-img_keys = list(img_to_cap_vector.keys())
-random.seed(42)
-random.shuffle(img_keys)
-
-img_name_train = []
-cap_train = []
-for img_key in img_keys:
-    capt_len = len(img_to_cap_vector[img_key])
-    img_name_train.extend([img_key] * capt_len)
-    cap_train.extend(img_to_cap_vector[img_key])
-
-#########################################
-#> Create tf.data dataset for training <#
-#########################################
-# Feel free to change these parameters according to your system's configuration
+image_folder = 'train2014/'
 
 BATCH_SIZE = 64
 BUFFER_SIZE = 1000
 embedding_dim = 256
 units = 512
-vocab_size = top_k + 1
-num_steps = len(img_name_train) // BATCH_SIZE
+vocab_size = TOP_K + 1
 # Shape of the vector extracted from InceptionV3 is (64, 2048)
 # These two variables represent that vector shape
-features_shape = 2048
-attention_features_shape = 64
+# features_shape = 2048
+# attention_features_shape = 64
 
-# Load the numpy files
-def map_func(img_name, cap):
-    img_tensor = np.load(img_name.decode('utf-8')+'.npy')
-    return img_tensor, cap
-
-dataset = tf.data.Dataset.from_tensor_slices((img_name_train, cap_train))
-
-# Use map to load the numpy files in parallel
-dataset = dataset.map(lambda item1, item2: tf.numpy_function(
-            map_func, [item1, item2], [tf.float32, tf.int32]),
-            num_parallel_calls=tf.data.experimental.AUTOTUNE)
-
-# Shuffle and batch
-dataset = dataset.shuffle(BUFFER_SIZE, seed=42).batch(BATCH_SIZE)
-dataset = dataset.prefetch(buffer_size=tf.data.experimental.AUTOTUNE)
+tokenizer, _ = load_tokenizer(annotation_file)
+dataset, dataset_size = e2e_create_tf_dataset(annotation_file, image_folder, BATCH_SIZE, BUFFER_SIZE)
+num_steps = dataset_size // BATCH_SIZE
 
 ###########
 #> Model <#
@@ -187,7 +93,7 @@ def train_step(img_tensor, target):
 
     return loss, total_loss
 
-EPOCHS = 35
+EPOCHS = 40
 
 with open('log.txt', 'a') as f:
     start_info = f'Number of epochs {EPOCHS} Number of steps per epoch {num_steps}\n'
