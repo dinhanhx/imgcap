@@ -4,7 +4,9 @@ import tensorflow as tf
 from model import CNN_Encoder, RNN_Decoder, FeatureExtraction
 from tokenization import load_tokenizer, TOP_K
 
-def load_latest_imgcap(checkpoint_path):
+tf.get_logger().setLevel('INFO')
+
+def load_latest_imgcap(checkpoint_path, ckpt_index=-1):
     embedding_dim = 256
     units = 512
     vocab_size = TOP_K + 1
@@ -14,8 +16,8 @@ def load_latest_imgcap(checkpoint_path):
     optimizer = tf.keras.optimizers.Adam()
 
     ckpt = tf.train.Checkpoint(encoder=encoder, decoder=decoder, optimizer=optimizer)
-    ckpt_man = tf.train.CheckpointManager(ckpt, checkpoint_path, max_to_keep=5)
-    ckpt.restore(ckpt_man.latest_checkpoint)
+    ckpt_man = tf.train.CheckpointManager(ckpt, checkpoint_path, max_to_keep=None)
+    ckpt.restore(ckpt_man.checkpoints[ckpt_index])
 
     return encoder, decoder
 
