@@ -69,20 +69,6 @@ if '__main__' == __name__:
     print(f'Inference takes {inference_time} seconds')
 ```
 
-Expected output if you use my pre-trained model on same GPU that I used:
-```
-a man surfing a wave in the ocean .
-Loading models takes 15.922804355621338 seconds
-Inference takes 1.5287904739379883 seconds
-```
-
-Expected output if you use my pre-trained model on same CPU that I used:
-```
-a man surfing a wave in the ocean .
-Loading models takes 15.178019046783447 seconds
-Inference takes 0.5142796039581299 seconds
-```
-
 __CPU__ that I used:
 ```
 Architecture:        x86_64
