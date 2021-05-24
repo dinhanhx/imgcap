@@ -50,7 +50,7 @@ checkpoint_path = "./checkpoints/train/"
 ckpt = tf.train.Checkpoint(encoder=encoder,
                             decoder=decoder,
                             optimizer=optimizer)
-ckpt_manager = tf.train.CheckpointManager(ckpt, checkpoint_path, max_to_keep=5)
+ckpt_manager = tf.train.CheckpointManager(ckpt, checkpoint_path, max_to_keep=None)
 
 start_epoch = 1
 if ckpt_manager.latest_checkpoint:
@@ -93,35 +93,41 @@ def train_step(img_tensor, target):
 
     return loss, total_loss
 
-EPOCHS = 40
+EPOCHS = 20
 
 with open('log.txt', 'a') as f:
     start_info = f'Number of epochs {EPOCHS} Number of steps per epoch {num_steps}\n'
     f.write(start_info)
     print(start_info)
 
-    for epoch in range(start_epoch, EPOCHS+1):
-        start_epoch = time.time()
-        total_loss = 0
+    with open('log_loss.csv', 'a') as ff:
+        ff.write('epoch,loss,time\n')
 
-        for (batch, (img_tensor, target)) in tqdm(enumerate(dataset), position=0, leave=True):
-            start_step = time.time()
-            batch_loss, t_loss = train_step(img_tensor, target)
-            total_loss += t_loss
+        for epoch in range(start_epoch, EPOCHS+1):
+            start_epoch = time.time()
+            total_loss = 0
 
-            average_batch_loss = batch_loss.numpy()/int(target.shape[1])
+            for (batch, (img_tensor, target)) in tqdm(enumerate(dataset), ascii=True):
+                start_step = time.time()
+                batch_loss, t_loss = train_step(img_tensor, target)
+                total_loss += t_loss
 
-            batch_info = f'Epoch {epoch} Batch {batch}/{num_steps} Loss {average_batch_loss:.4f} Time {time.time()-start_step:.2f} sec\n' 
-            f.write(batch_info)
-            print(batch_info)
+                average_batch_loss = batch_loss.numpy()/int(target.shape[1])
 
-        if epoch % 5 == 0:
-            ckpt_manager.save()
-        
-        epoch_loss_info = f'Epoch {epoch} Loss {total_loss/num_steps:.6f}\n'
-        f.write(epoch_loss_info)
-        print(epoch_loss_info)
+                batch_info = f'Epoch {epoch} Batch {batch}/{num_steps} Loss {average_batch_loss:.4f} Time {time.time()-start_step:.2f} sec\n' 
+                f.write(batch_info)
+                print(batch_info)
 
-        epoch_time_info = f'Time taken for 1 epoch {time.time()-start_epoch:.2f} sec\n\n'
-        f.write(epoch_time_info)
-        print(epoch_time_info)
+            if epoch % 5 == 0:
+                ckpt_manager.save()
+            
+            epoch_loss_info = f'Epoch {epoch} Loss {total_loss/num_steps:.6f}\n'
+            f.write(epoch_loss_info)
+            print(epoch_loss_info)
+
+            time_taken = time.time()-start_epoch
+            epoch_time_info = f'Time taken for 1 epoch {time_taken} sec\n\n'
+            f.write(epoch_time_info)
+            print(epoch_time_info)
+
+            ff.write(f'{epoch},{total_loss/num_steps:.6f},{time_taken}\n')
